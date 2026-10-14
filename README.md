@@ -1,6 +1,6 @@
 
 # Polypharmacy and pre-ICU length of hospital stay are associated with one-year mortality in critical COVID-19 in a retrospective exploratory explainable machine-learning survival analysis
-One-year mortality risk ML survival analysis and explainable AI in patients with critical covid-19.<br>
+One-year mortality risk ML survival analysis and explainable AI in patients with critical COVID-19.<br>
 
 <br>
 <br>
@@ -11,6 +11,12 @@ One-year mortality risk ML survival analysis and explainable AI in patients with
 
 <code>c19_survival_XGBoost_hp.py</code> <br>
 - Hyperparameter search
+
+<code>c19_survival_XGBoost_train.py</code> <br>
+- Training the final model
+
+<code>c19_survival_XGBoost_XAI.py</code> <br>
+- XAI and SHAP-derived HRs
 
 The Cox PH model is trained and evaluated by replacing the XGBoost model with the Cox PH model from the scikit-survival Python module.
 
