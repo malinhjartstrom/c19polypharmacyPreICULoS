@@ -528,9 +528,7 @@ def plot_shap_feature(
                     ax.add_patch(ellipse)
 
         plt.ylabel("SHAP value")
-        plt.title(
-            "Variable effect on SHAP value for one-year mortality risk"
-        )
+        #plt.title("Variable effect on SHAP value for one-year mortality risk")
         cbar = plt.colorbar(sc)
         cbar.set_label(feat_names[i])
         ax.grid(True)
@@ -1460,30 +1458,18 @@ def top_features(shap_mean, nbr_of_features = 14):
 # -------------------------------------------------------------------
 # Kaplan-Meier and log rank test
 # -------------------------------------------------------------------
-def km(feature_mean, pred_and_targ):
-
-    ### Log rank test
-    meds_high_idx = feature_mean.loc[feature_mean['meds_per_pat'] >= 5].index
-    meds_low_idx = feature_mean.loc[feature_mean['meds_per_pat'] < 5].index
-    meds_high = pred_and_targ.iloc[pred_and_targ.index.isin(meds_high_idx)]
-    meds_low = pred_and_targ.iloc[pred_and_targ.index.isin(meds_low_idx)]
-    meds_high['survival_days_from_icu_start'] = pred_and_targ['survival_days_from_icu_start'].iloc[pred_and_targ.index.isin(meds_high_idx)]
-    meds_low['survival_days_from_icu_start'] = pred_and_targ['survival_days_from_icu_start'].iloc[pred_and_targ.index.isin(meds_low_idx)]
-    log_rank_results = statistics.logrank_test(meds_low['survival_days_from_icu_start'],
-                                               meds_high['survival_days_from_icu_start'], meds_low['mort'],
-                                               meds_high['mort'])
-    print(log_rank_results)
-
-    ### Kaplan-Meier
+def km_meds(data, variable):
     # Identify low and high medication patients and binarize into low (0) and high (1)
-    feature_mean['meds_per_pat'].loc[
-        feature_mean['meds_per_pat'] < 5] = 0
-    feature_mean['meds_per_pat'].loc[
-        feature_mean['meds_per_pat'] >= 5] = 1
+    df = data.copy()
+    df[variable].loc[
+        data[variable] < 5] = 0 # for polypharmacy
+    df[variable].loc[
+        data[variable] >= 5] = 1 # for polypharmacy
 
-    df = feature_mean.copy()
-    df["time"] = pred_and_targ['survival_days_from_icu_start']
-    df["event"] = pred_and_targ['mort']
+    df[variable] = df[variable].astype(int)
+
+    df["time"] = data['survival_days_from_icu_start']
+    df["event"] = data['mort']
 
     # Initialize plot
     plt.figure(figsize=(10, 6))
@@ -1496,20 +1482,20 @@ def km(feature_mean, pred_and_targ):
     }
 
     # Plot survival curve for each group
-    colors = ['blue', 'red']
-    for group in df["meds_per_pat"].unique():
-        ix = df["meds_per_pat"] == group
+    colors = ['blue','red']
+    for group in df[variable].unique():
+        ix = df[variable] == group
         label = label_map.get(group, str(group))  #
         kmf.fit(df.loc[ix, "time"], event_observed=df.loc[ix, "event"],
                 label=label)
-        kmf.plot_survival_function(color = colors[group])
+        kmf.plot_survival_function(color=colors[group])
 
-    plt.title("Kaplan-Meier curves by polypharmacy")
+    #plt.title("Kaplan-Meier curves by polypharmacy")
     plt.xlabel("Days")
-    plt.ylabel("Survival (%)")
+    plt.ylabel("Survival probability")
     plt.grid(True)
-    plt.legend(title="Medications per patient")
-    save_as_svg(date_time, 'Kaplan_Meier_meds_per_pat', subfolder=None)
+    plt.legend(title="Number of medications per patient")
+    save_as_svg(date_time, 'Kaplan_Meier_' + variable, subfolder=None)
 
     return
 
@@ -1540,15 +1526,17 @@ def schoenfeld_residuals(shap_mean, pred_and_targ, topfeatures: list):
 # -------------------------------------------------------------------
 # C-index at different times
 # -------------------------------------------------------------------
-def prop_hazards(pred_and_targ):
+def prop_hazards(pred_and_targ, train_pred):
+
     # Structured arrays
-    y_train_structured = Surv.from_arrays(pred_and_targ["mort"].astype(bool).values, pred_and_targ["survival_days_from_icu_start"].values)
-    y_test_structured = Surv.from_arrays(pred_and_targ["mort"].astype(bool).values, pred_and_targ["survival_days_from_icu_start"].values)
+    y_train_structured = Surv.from_arrays(train_pred["mort"].astype(bool).values,
+                                          train_pred["survival_days_from_icu_start"].values)
+    y_test_structured = Surv.from_arrays(pred_and_targ["mort"].astype(bool).values,
+                                         pred_and_targ["survival_days_from_icu_start"].values)
 
     # Evaluate C-index at 3, 6, 9, 12 months (in days)
     time_points = [90, 180, 270, 365]
 
-    print("C-index at different time points:")
     for t in time_points:
         c_index, _, _, _, _ = concordance_index_ipcw(
             y_train_structured,
@@ -1560,17 +1548,15 @@ def prop_hazards(pred_and_targ):
         # CI for C-index
         val_c = []
         for re in range(n_bootstraps):
-            bs_sample = pred_and_targ.sample(n=len(pred_and_targ),
+            bs_sample_val = pred_and_targ.sample(n=len(pred_and_targ),
                                                        replace=True)  # Sampling with replacement
             # Structured arrays
-            y_train_structured_boot = Surv.from_arrays(bs_sample["mort"].astype(bool).values,
-                                                  bs_sample["survival_days_from_icu_start"].values)
-            y_test_structured_boot = Surv.from_arrays(bs_sample["mort"].astype(bool).values,
-                                                 bs_sample["survival_days_from_icu_start"].values)
+            y_test_structured_boot = Surv.from_arrays(bs_sample_val["mort"].astype(bool).values,
+                                                 bs_sample_val["survival_days_from_icu_start"].values)
 
-            cindex_val = concordance_index_ipcw(y_train_structured_boot,
+            cindex_val = concordance_index_ipcw(y_train_structured,
                                                     y_test_structured_boot,
-                                                    bs_sample['validation_predictions'],
+                                                    bs_sample_val['validation_predictions'],
                                                     tau=t)
             val_c.append(cindex_val[0])
 
@@ -1596,6 +1582,8 @@ feature_val = pd.read_excel(results_path + r"\feature_values.xlsx",
                           engine='openpyxl')
 predictions_and_targets = pd.read_excel(results_path + r"\predictions_and_target.xlsx",
                           engine='openpyxl')
+training_predictions = pd.read_excel(results_path + r"\training_predictions.xlsx",
+                          engine='openpyxl')
 # -------------------------------------------------------------------
 # Run functions for figs and tests
 # -------------------------------------------------------------------
@@ -1604,8 +1592,8 @@ fig_summary(shap_val_mean, feature_val, 14)
 points_of_interest_df = shap_hr(shap_val_mean, feature_val, top14features, just_get_df = False)
 schoenfeld_residuals(shap_val_mean, predictions_and_targets, top14features)
 fig_dep_loess(shap_val_mean, feature_val, top14features)
-km(feature_val, predictions_and_targets)
-prop_hazards(predictions_and_targets)
+km_meds(feature_val, "#Meds/patient")
+prop_hazards(predictions_and_targets, training_predictions)
 
 # -------------------------------------------------------------------
 # Save all figs in a common PDF file
