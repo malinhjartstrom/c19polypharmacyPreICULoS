@@ -24,6 +24,8 @@ One-year mortality risk ML survival analysis and explainable AI in patients with
   
 The Cox PH model is trained and evaluated by replacing the XGBoost model with the Cox PH model from the scikit-survival Python module.
 
+The code for preprocessing the data is not available due to the sensitivity of the data. 
+
 ---
 
 
