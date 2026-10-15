@@ -2,9 +2,6 @@
 # Polypharmacy and pre-ICU length of hospital stay are associated with one-year mortality in critical COVID-19 in a retrospective exploratory explainable machine-learning survival analysis
 One-year mortality risk ML survival analysis and explainable AI in patients with critical COVID-19.<br>
 
-<br>
-<br>
-
 ---
 
 ## Scripts
