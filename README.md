@@ -15,15 +15,26 @@ One-year mortality risk ML survival analysis and explainable AI in patients with
 <code>c19_survival_XGBoost_XAI.py</code> <br>
 - XAI and SHAP-derived HRs
 
-<code>c19shapenvironment.yml</code> <br>
-- Configurations
-
 <code>c19_survival_forest_plot.R</code> <br>
 - Making the forest plot of the SHAP-derived HRs
 
 The Cox PH model is trained and evaluated by replacing the XGBoost model with the Cox PH model from the scikit-survival Python module.
 
 The code for preprocessing the data is not available due to the sensitivity of the data. 
+
+---
+
+## Configurations
+
+<code>c19shapenvironment.yml</code> <br>
+- Configurations for the Python code
+
+---
+
+## Files
+
+best_params.xlsx
+- Optimal hyperparameters for the XGBoost model
 
 ---
 
