@@ -18,7 +18,9 @@ One-year mortality risk ML survival analysis and explainable AI in patients with
 <code>c19_survival_forest_plot.R</code> <br>
 - Making the forest plot of the SHAP-derived HRs
 
-  
+<code>c19shapenvironment.yml</code> <br>
+- Configurations
+
 The Cox PH model is trained and evaluated by replacing the XGBoost model with the Cox PH model from the scikit-survival Python module.
 
 The code for preprocessing the data is not available due to the sensitivity of the data. 
